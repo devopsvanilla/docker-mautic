@@ -1,4 +1,4 @@
-FROM php:8.1-apache as builder
+FROM php:8.1-apache AS builder
 
 LABEL vendor="Mautic"
 LABEL maintainer="Mautic core team <>"
@@ -51,10 +51,10 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 
-RUN echo "memory_limit = -1" > /usr/local/etc/php/php.ini
+RUN echo "memory_limit = 1536M" > /usr/local/etc/php/php.ini
 
 # Define Mautic version by package tag
-ARG MAUTIC_VERSION=5.x-dev
+ARG MAUTIC_VERSION=5.1.1
 
 RUN cd /opt && \
     COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_PROCESS_TIMEOUT=10000 composer create-project mautic/recommended-project:${MAUTIC_VERSION} mautic --no-interaction && \
@@ -77,8 +77,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm /etc/cron.daily/*
 
 # Setting PHP properties
-ENV PHP_INI_VALUE_DATE_TIMEZONE='UTC' \
-    PHP_INI_VALUE_MEMORY_LIMIT=512M \
+ENV PHP_INI_VALUE_DATE_TIMEZONE='America/Sao_Paulo' \
+    PHP_INI_VALUE_MEMORY_LIMIT=1536M \
     PHP_INI_VALUE_UPLOAD_MAX_FILESIZE=512M \
     PHP_INI_VALUE_POST_MAX_FILESIZE=512M \
     PHP_INI_VALUE_MAX_EXECUTION_TIME=300

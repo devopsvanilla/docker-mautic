@@ -33,34 +33,52 @@ rabbitmq-worker/                     # Root project directory
 
 ## Configuration
 
-1. Create the required directories:
+1. Optional: Create the directories specified by the volumes in docker-compose.yml for custom settings. Refer to the [README.md](../../README.md) file in the root of this repository for detailed instructions:
+
 ```bash
-mkdir -p mautic/{config,logs,media/{files,images}}
+mkdir -p volumes/mautic/{config,cron,media/{files,images}}
 ```
+
 2. Copy the example environment files:
 
 ```bash
-cp ../../.env.example .env
-cp ../../.mautic_env.example .mautic_env
+cp .env.example .env
+cp .mautic_env.example .mautic_env
 ```
 3. Configure the .env file with your database settings:
 ```bash
-MYSQL_ROOT_PASSWORD=your_root_password
-MYSQL_DATABASE=mautic
-MYSQL_USER=mautic
-MYSQL_PASSWORD=your_password
-COMPOSE_PROJECT_NAME=mautic-rabbitmq
+COMPOSE_PROJECT_NAME=rabbitmq-worker
+COMPOSE_NETWORK=${COMPOSE_PROJECT_NAME}-docker
+
+MYSQL_HOST=db.${COMPOSE_NETWORK}
+MYSQL_PORT=3306
+MYSQL_DATABASE=mautic_db
+MYSQL_USER=mautic_db_user
+MYSQL_PASSWORD=mautic_db_pwd
+MYSQL_ROOT_PASSWORD=changeme
+
+PHP_INI_VALUE_MEMORY_LIMIT=1536M
+
+RABBITMQ_DEFAULT_USER=mautic
+RABBITMQ_DEFAULT_PASS=mautic
+RABBITMQ_DEFAULT_VHOST=mautic
+RABBITMQ_NODE_PORT=5672
+RABBITMQ_MANAGEMENT_PORT=15672
 ```
 
 4. Configure the .mautic_env file with RabbitMQ settings:
 ```bash
-MAUTIC_DB_HOST=mysql
-MAUTIC_DB_USER=mautic
-MAUTIC_DB_PASSWORD=your_password
-MAUTIC_DB_NAME=mautic
-MAUTIC_MESSENGER_TRANSPORT_DSN=amqp://guest:guest@rabbitmq:5672/%2f/messages
-MAUTIC_MESSENGER_TRANSPORT_FAILED_DSN=doctrine://default?queue_name=failed
-MAUTIC_MESSENGER_TRANSPORT_DELAY_DSN=doctrine://default?queue_name=delay
+MAUTIC_DB_HOST="${MYSQL_HOST}"
+MAUTIC_DB_PORT="${MYSQL_PORT}"
+MAUTIC_DB_DATABASE="${MYSQL_DATABASE}"
+MAUTIC_DB_USER="${MYSQL_USER}"
+MAUTIC_DB_PASSWORD="${MYSQL_PASSWORD}"
+
+MAUTIC_MESSENGER_DSN_EMAIL="amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/mautic/messages"
+MAUTIC_MESSENGER_DSN_HIT="amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/mautic/messages"
+
+DOCKER_MAUTIC_RUN_MIGRATIONS=false
+DOCKER_MAUTIC_LOAD_TEST_DATA=false
 ```
 
 5. Change sections variables in <b><i>enviroment</i></b> of  <b>docker-compose.yml</b> file for specific settings of each container and also the resources limits of each service as CPU and RAM.
@@ -77,54 +95,25 @@ docker compose up -d
 ````
 3. Access Mautic:
 
-- Web Interface: http://localhost:8001
+- Web Interface: http://localhost:8003
 
 - RabbitMQ Management Interface: http://localhost:15672 (default credentials: guest/guest)
 
-## Maintenance
-
-### Queue Management
-
-Monitor RabbitMQ queues:
-````bash
-docker compose exec -u www-data mautic_web php bin/console messenger:status
-````
-View message consumers status:
-````bash
-docker compose exec -u www-data mautic_worker php bin/console messenger:consume async
-````
 ## Logs
 #### View Mautic logs:
 ```bash
-docker compose exec mautic_web tail -f /var/www/html/var/logs/mautic.log
+cd ./volumes/mautic/logs
+ls -la
 ```
 #### View RabbitMQ logs:
 ```bash
 docker compose logs rabbitmq
 ````
 
-### Backup
+## Backup
 
-Backup can be done from the directory <b><i>./volumes</i></b>Created at the Docker Engine host or remotely through the following commands:
+Backup for all services can be done from the directory [./volumes](./volumes) created at the Docker Engine host.
 
-#### Backup RabbitMQ definitions:
-
-```bash
-docker compose exec rabbitmq rabbitmqctl export_definitions /tmp/rabbitmq-definitions.json
-
-docker cp $(docker compose ps -q rabbitmq):/tmp/rabbitmq-definitions.json ./rabbitmq-definitions.json
-```
-
-#### Backup Mautic data:
-##### Backup database
-```bash
-docker compose exec db mysqldump -u root -p$MYSQL_ROOT_PASSWORD mautic > mautic_backup.sql
-````
-#### Backup Mautic files
-```bash
-docker compose exec mautic_web tar czf /tmp/mautic-files.tar.gz /var/www/html/config /var/www/html/media
-docker cp $(docker compose ps -q mautic_web):/tmp/mautic-files.tar.gz ./mautic-files.tar.gz
-```
 
 ## Scaling Workers
 
@@ -147,20 +136,6 @@ bash undeploy.sh
 docker compose ps
 ```
 
-#### Verify RabbitMQ connectivity:
-```bash
-docker compose exec mautic_web php bin/console messenger:setup-transport
-```
-
-#### Clear Mautic cache:
-```bash
-docker compose exec -u www-data mautic_web php bin/console cache:clear
-```
-
-#### Reset failed messages:
-```bash
-docker compose exec -u www-data mautic_web php bin/console messenger:failed:retry
-```
 ## Security Considerations
 - Change default RabbitMQ credentials in production
 - Enable SSL/TLS for RabbitMQ connections
