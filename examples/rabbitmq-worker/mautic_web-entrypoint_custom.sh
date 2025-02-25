@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 ### This entrypoint script includes in the MAUTIC-WEB service the Cron Job for processing the import files in backgroud contact files
 ### To change the cron job execution time after deployment, change the value of the ./volumes/crontab/mautic-import to the desired value
 

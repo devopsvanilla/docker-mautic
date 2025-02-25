@@ -19,3 +19,4 @@ examples/basic/cron/*
 examples/fpm-nginx/mautic/*
 examples/fpm-nginx/cron/*
 examples/rabbitmq-worker/volumes/*
+.vscode/settings.json

@@ -7,8 +7,19 @@ MAUTIC_DB_DATABASE="${MYSQL_DATABASE}"
 MAUTIC_DB_USER="${MYSQL_USER}"
 MAUTIC_DB_PASSWORD="${MYSQL_PASSWORD}"
 
-MAUTIC_MESSENGER_DSN_EMAIL="amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/mautic/messages"
-MAUTIC_MESSENGER_DSN_HIT="amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/mautic/messages"
+
+# Define the RabbitMQ DSN for the queues without slashes
+MAUTIC_MESSENGER_DSN_EMAIL="amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/mautic_message"
+MAUTIC_MESSENGER_DSN_HIT="amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/mautic_hit"
+MAUTIC_MESSENGER_DSN_FAILED="amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/mautic_failed"
+
+# Define the mailer URL specific to your mailer to be used in queue emails
+# For example, to use the mailgun mailer, you would set the MAILER_URL as follows:
+# SMTP
+#MAILER_URL="smtp://postmaster%%40<YOUR MAILGUN LOGIN>:<YOUR MAILGUN PASSWORD>:587"
+# API (best)
+MAILER_URL="mailgun+api://api:key-<YOUR MAILGUN SENDING KEY>@<YOUR MAILGUN DOMAIN>"
 
 DOCKER_MAUTIC_RUN_MIGRATIONS=false
 DOCKER_MAUTIC_LOAD_TEST_DATA=false
+

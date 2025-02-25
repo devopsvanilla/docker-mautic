@@ -17,6 +17,8 @@ rabbitmq-worker/                     # Root project directory
 ├── .mautic_env                      # Docker Compose Mautic specific environment variables
 ├── docker-compose.yml               # Docker Compose configuration file
 ├── mautic_web-entrypoint_custom.sh  # Custom Docker Image Entrypoint for Docker Mautic Image used in Web container
+├── rabbitmq-entrypoint_custom.sh    # Custom entrypoint container script to create vhosts used in Mautic
+├── supervisord.conf                 # Custom configuration with best practices do Mautic Workers
 ├── undeploy.sh                      # Undeploy application from you Docker Host
 ├── volumes/                         # Created at execution for container storage
 │   ├── mautic/                      # Mautic specific shared directories
@@ -45,43 +47,13 @@ mkdir -p volumes/mautic/{config,cron,media/{files,images}}
 cp .env.example .env
 cp .mautic_env.example .mautic_env
 ```
-3. Configure the .env file with your database settings:
-```bash
-COMPOSE_PROJECT_NAME=rabbitmq-worker
-COMPOSE_NETWORK=${COMPOSE_PROJECT_NAME}-docker
+3. Configure the  ```.env``` file with your database settings.
 
-MYSQL_HOST=db.${COMPOSE_NETWORK}
-MYSQL_PORT=3306
-MYSQL_DATABASE=mautic_db
-MYSQL_USER=mautic_db_user
-MYSQL_PASSWORD=mautic_db_pwd
-MYSQL_ROOT_PASSWORD=changeme
+4. Configure the ```.mautic_env``` file with RabbitMQ settings.
 
-PHP_INI_VALUE_MEMORY_LIMIT=1536M
+5. Change sections variables in <b><i>enviroment</i></b> of  ```docker-compose.yml``` file for specific settings of each container and also the resources limits of each service as CPU and RAM.
 
-RABBITMQ_DEFAULT_USER=mautic
-RABBITMQ_DEFAULT_PASS=mautic
-RABBITMQ_DEFAULT_VHOST=mautic
-RABBITMQ_NODE_PORT=5672
-RABBITMQ_MANAGEMENT_PORT=15672
-```
-
-4. Configure the .mautic_env file with RabbitMQ settings:
-```bash
-MAUTIC_DB_HOST="${MYSQL_HOST}"
-MAUTIC_DB_PORT="${MYSQL_PORT}"
-MAUTIC_DB_DATABASE="${MYSQL_DATABASE}"
-MAUTIC_DB_USER="${MYSQL_USER}"
-MAUTIC_DB_PASSWORD="${MYSQL_PASSWORD}"
-
-MAUTIC_MESSENGER_DSN_EMAIL="amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/mautic/messages"
-MAUTIC_MESSENGER_DSN_HIT="amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/mautic/messages"
-
-DOCKER_MAUTIC_RUN_MIGRATIONS=false
-DOCKER_MAUTIC_LOAD_TEST_DATA=false
-```
-
-5. Change sections variables in <b><i>enviroment</i></b> of  <b>docker-compose.yml</b> file for specific settings of each container and also the resources limits of each service as CPU and RAM.
+6. Ajustes os valores do arquivo ```supervisord.conf```
 
 ## Deployment
 

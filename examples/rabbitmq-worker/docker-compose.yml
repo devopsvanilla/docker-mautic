@@ -5,8 +5,8 @@ x-mautic-volumes: &mautic-volumes
   - ./volumes/mautic/media/files:/var/www/html/docroot/media/files:z
   - ./volumes/mautic/media/images:/var/www/html/docroot/media/images:z
   - ./volumes/mautic/cron:/opt/mautic/cron:z
-  - ./mautic_web-entrypoint_custom.sh:/entrypoint_custom.sh  # Add this line
-
+  - ./mautic_web-entrypoint_custom.sh:/entrypoint_custom.sh
+  - ./supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
 services:
   # MySQL Database Service
   db:
@@ -15,8 +15,8 @@ services:
     restart: unless-stopped
 ### [MYSQL External Access]
 ### Remove the commented lines below to access MySQL trough Docker Host
-#    ports:
-#      - 3306:3306
+###    ports:
+###      - 3306:3306
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
@@ -55,11 +55,16 @@ services:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
       - RABBITMQ_DEFAULT_VHOST=${RABBITMQ_DEFAULT_VHOST}
+      - RABBITMQ_MAIL_VHOST=${RABBITMQ_MAIL_VHOST}
+      - RABBITMQ_HIT_VHOST=${RABBITMQ_HIT_VHOST}
+      - RABBITMQ_FAILED_VHOST=${RABBITMQ_FAILED_VHOST}
+    volumes:
+      - ./rabbitmq-entrypoint_custom.sh:/entrypoint_custom.sh
+      - ./volumes/rabbitmq:/var/lib/rabbitmq      
+    command: ["/entrypoint_custom.sh"]
     ports:
       - "${RABBITMQ_NODE_PORT:-5672}:5672"
       - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
-    volumes:
-      - ./volumes/rabbitmq:/var/lib/rabbitmq
     deploy:
       resources:
         limits:
@@ -69,7 +74,7 @@ services:
           cpus: '0.5'
           memory: 512M
     healthcheck:
-      test: rabbitmq-diagnostics -q ping
+      test: ["CMD-SHELL", "rabbitmqctl list_queues -p ${RABBITMQ_MAIL_VHOST} && rabbitmqctl list_queues -p ${RABBITMQ_HIT_VHOST} && rabbitmqctl list_queues -p ${RABBITMQ_FAILED_VHOST}"]
       start_period: 360s
       interval: 30s
       timeout: 10s
@@ -82,9 +87,10 @@ services:
         max-size: "10m"
         max-file: "3"
 
+
   # Mautic Web Application
   mautic_web:
-    image: mautic/mautic:5.1.1-apache
+    image: mautic/mautic:5.2.1-apache
     restart: unless-stopped
     links:
       - db:mysql
@@ -126,7 +132,7 @@ services:
 
   # Mautic Cron Service
   mautic_cron:
-    image: mautic/mautic:5.1.1-apache
+    image: mautic/mautic:5.2.1-apache
     restart: unless-stopped
     links:
       - db:mysql
@@ -158,7 +164,7 @@ services:
 
   # Mautic Worker Service
   mautic_worker:
-    image: mautic/mautic:5.1.1-apache
+    image: mautic/mautic:5.2.1-apache
     restart: unless-stopped
     links:
       - db:mysql
