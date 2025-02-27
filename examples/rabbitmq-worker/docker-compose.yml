@@ -4,7 +4,6 @@ x-mautic-volumes: &mautic-volumes
   - ./volumes/mautic/logs:/var/www/html/var/logs:z
   - ./volumes/mautic/media/files:/var/www/html/docroot/media/files:z
   - ./volumes/mautic/media/images:/var/www/html/docroot/media/images:z
-  - ./volumes/mautic/cron:/opt/mautic/cron:z
   - ./mautic_web-entrypoint_custom.sh:/entrypoint_custom.sh
   - ./supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
 services:
@@ -90,7 +89,12 @@ services:
 
   # Mautic Web Application
   mautic_web:
-    image: mautic/mautic:5.2.1-apache
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    image: mautic/mautic:5.2.3-apache
     restart: unless-stopped
     links:
       - db:mysql
@@ -117,11 +121,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    depends_on:
-      db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     networks:
       - mautic_network
     logging:
@@ -132,7 +131,7 @@ services:
 
   # Mautic Cron Service
   mautic_cron:
-    image: mautic/mautic:5.2.1-apache
+    image: mautic/mautic:5.2.3-apache
     restart: unless-stopped
     links:
       - db:mysql
@@ -164,7 +163,7 @@ services:
 
   # Mautic Worker Service
   mautic_worker:
-    image: mautic/mautic:5.2.1-apache
+    image: mautic/mautic:5.2.3-apache
     restart: unless-stopped
     links:
       - db:mysql

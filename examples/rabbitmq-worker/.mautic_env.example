@@ -15,8 +15,8 @@ MAUTIC_MESSENGER_DSN_FAILED="amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_
 # For example, to use the mailgun mailer, you would set the MAILER_URL as follows:
 # SMTP
 MAILGUN_SENDINGKEY="<YOUR SENDING KEY>" # e.g.: xxxxxxxx-xxxxxxx-xxxxxxx
-MAILGUN_DOMAIN="<YOUR DOMAIN>" # e.g.: sandboxxxxxxxxxxxxxx.mailgun.org
-MAILER_URL="mailgun+api://api:key-${MAILGUN_SENDINGKEY}@${MAILGUN_DOMAIN}"
+MAILGUN_DOMAIN="<YOUR MAILGUN DOMAIN>" # e.g.: sandboxxxxxxxxxxxxxx.mailgun.org. Get in https://app.mailgun.com/mg/sending/domains
+MAILER_URL="mailgun+api://api:key-${MAILGUN_SENDINGKEY}%%40$${MAILGUN_DOMAIN}"
 
 DOCKER_MAUTIC_RUN_MIGRATIONS=false
 DOCKER_MAUTIC_LOAD_TEST_DATA=false
